@@ -1,5 +1,5 @@
 def main():
-    print("Hello from seedling-tracker!")
+    print("Seedling tracker")
 
 
 if __name__ == "__main__":
