@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: seedling_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: supersecret
+      POSTGRES_DB: farming_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d farming_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    container_name: seedling_app
+    environment:
+      DB_HOST: db  # This matches the service name above
+      DB_USER: admin
+      DB_PASS: supersecret
+      DB_NAME: farming_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy

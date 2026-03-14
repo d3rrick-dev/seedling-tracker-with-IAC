@@ -1,0 +1,11 @@
+# Local terraform state (contains sensitive data)
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Variables file containing secrets
+terraform.tfvars
+*.tfvars.json
+
+# Log files
+crash.log
