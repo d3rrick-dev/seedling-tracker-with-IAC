@@ -51,3 +51,12 @@ State Management -  a `terraform.tfstate` file. For tracking infra changes.
 Provider Ecosystem - Swappable infras' "Docker" provider for "AWS" or "Azure" with minimal changes to the logic.
 
 Separation of Concerns - Treating your DB and App as resources rather than just "scripts."
+
+
+### Adding NGINX
+```bash
+#Update endpoint
+http://localhost/seedlings
+http://localhost/buyers/search
+http://localhost/docs
+```

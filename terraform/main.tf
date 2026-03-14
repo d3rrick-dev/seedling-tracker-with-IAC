@@ -37,10 +37,27 @@ resource "docker_container" "fastapi_app" {
     "DB_NAME=${var.db_name}"
   ]
 
-  ports {
-    internal = 8000
-    external = 8000
+  depends_on = [docker_container.postgres_db]
+}
+
+resource "docker_container" "nginx" {
+  name  = "nginx_proxy"
+  image = "nginx:alpine"
+  
+  networks_advanced {
+    name = docker_network.farming_net.name
   }
 
-  depends_on = [docker_container.postgres_db]
+  ports {
+    internal = 80
+    external = 80
+  }
+
+  volumes {
+    host_path      = "${abspath("${path.module}/../nginx/default.conf")}"
+    container_path = "/etc/nginx/conf.d/default.conf"
+    read_only      = true
+  }
+
+  depends_on = [docker_container.fastapi_app]
 }
