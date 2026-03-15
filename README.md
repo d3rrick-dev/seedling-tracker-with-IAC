@@ -1,4 +1,48 @@
 
+## Architecture & System Design
+
+The Seedling Management System is built using a **Cloud-Native, Event-Driven Architecture**. It leverages FastAPI for the core logic, SQLAlchemy for persistence, and LocalStack to emulate AWS services locally.
+
+### Component Overview
+* **API Layer:** FastAPI provides a RESTful interface for seedling lifecycle management and buyer searches.
+* **Service Layer:** Contains business logic, maturity calculations, and interacts with S3/SQS.
+* **Data Layer:** PostgreSQL (via SQLAlchemy/Alembic) stores seedling metadata and status.
+* **Infrastructure:** * **LocalStack:** Emulates AWS S3 (Image storage) and SQS (Background processing).
+    * **KinD (Kubernetes in Docker):** Orchestrates the containerized application.
+* **Testing:** Behave (BDD) executes End-to-End scenarios against the live `TestClient`.
+
+---
+
+## End-to-End (E2E) Flow
+
+The following flow represents the lifecycle of a seedling during a BDD test run:
+
+### 1. Seedling Creation (POST)
+* **User Action:** Sends a POST request to `/seedlings/` with crop type and quantity.
+* **System Action:** FastAPI validates the payload, generates a unique ID (auto-incrementing), and saves the metadata to the PostgreSQL database.
+* **Result:** Returns `200 OK` with the new Seedling ID.
+
+### 2. Media Upload & Processing (POST)
+* **User Action:** Sends a multipart file upload to `/seedlings/{id}/upload-photo/`.
+* **System Action:** * The service mocks/uploads the raw image to an **S3 Bucket**.
+    * A message is sent to **SQS** to trigger background thumbnail generation.
+* **Result:** Returns status `Uploaded & Processing`.
+
+### 3. Verification & Search (GET)
+* **User Action:** The BDD engine performs a "Search" via `/buyers/search?query_date=...`.
+* **System Action:** * The test overrides the service mock to ensure the "Auto-Incremented" ID from step 1 matches the search results.
+    * The API queries the database for seedlings matching the planting date and status.
+* **Validation:** The BDD `Then` step confirms the image URLs contain the correct S3 paths and the seedling status is "Growing".
+
+---
+
+## Testing Strategy
+
+Following the **Testing Pyramid** approach with a heavy emphasis on **Behavioral Testing**:
+
+1.  **Unit Tests (Pytest):** Validate isolated functions like date calculations and data parsing.
+2.  **BDD Tests (Behave):** Validate the "Business Value" by simulating real user interactions across multiple API endpoints.
+3.  **Mocking Strategy:** We use `unittest.mock.patch` to isolate external dependencies (AWS) during CI, while maintaining the integrity of the Database and Routing layers.
 
 ### Terraform
 `providers.tf` - Defines which cloud/tooling you are using (Docker, Kubernetes, etc.) and the required versions.
