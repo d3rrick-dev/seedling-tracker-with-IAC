@@ -1,43 +1,40 @@
-from fastapi import FastAPI, Depends, Query
+from datetime import date
+from fastapi import FastAPI, Depends, Query, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
-from datetime import date, timedelta
-from . import models, schemas, database
+from typing import List
 
-app = FastAPI(title="Seedling Tracker API")
+from . import schemas
+from .database import get_db
+from .services.seedling_service import SeedlingService
 
+app = FastAPI(title="Seedling Tracker API")     
 
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_seedling_service(db: Session = Depends(get_db)):
+    return SeedlingService(db)
 
 @app.post("/seedlings/", response_model=schemas.SeedlingOut)
-def create_seedling(seedling: schemas.SeedlingCreate, db: Session = Depends(get_db)):
-    db_seedling = models.Seedling(**seedling.model_dump())
-    db.add(db_seedling)
-    db.commit()
-    db.refresh(db_seedling)
-    return db_seedling
+def create_seedling(data: schemas.SeedlingCreate, service: SeedlingService = Depends(get_seedling_service)):
+    """Register a new seedling."""
+    return service.register_new_seedling(data)
 
-@app.get("/buyers/search/")
-def search_seedlings(query_date: date = Query(...), db: Session = Depends(get_db)):
-    seedlings = db.query(models.Seedling).all()
-    results = []
+@app.post("/seedlings/{seedling_id}/upload-photo/")
+async def upload_photo(seedling_id: int, file: UploadFile = File(...), service: SeedlingService = Depends(get_seedling_service)):
+    """Uploads a photo to S3, updates the DB, and triggers the thumbnail worker via Service."""
 
-    for s in seedlings:
-        ready_date = s.planting_date + timedelta(days=s.maturity_days)
-        days_remaining = (ready_date - query_date).days
+    try:
+        result = service.handle_photo_upload(seedling_id, file)
+        if not result:
+            raise HTTPException(status_code=404, detail="Seedling not found")
         
-        results.append({
-            "id": s.id,
-            "crop_type": s.crop_type,
-            "quantity": s.quantity,
-            "location": s.location,
-            "ready_date": ready_date,
-            "days_remaining": max(0, days_remaining),
-            "status": "Ready" if days_remaining <= 0 else "Growing"
-        })
-    
-    return results
+        return {
+            "status": "Uploaded & Processing", 
+            "seedling_id": seedling_id,
+            "image_url": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Processing Error: {str(e)}")
+
+@app.get("/buyers/search/", response_model=List[schemas.SeedlingSearchOut])
+def search_seedlings(query_date: date = Query(...), service: SeedlingService = Depends(get_seedling_service)):
+    """Search for seedlings and calculate growth status via Service."""
+    return service.get_seedlings_with_status(query_date)

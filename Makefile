@@ -71,3 +71,11 @@ delete:
 stop-all:
 	kubectl scale deployment seedling-api --replicas=0 -n farming-platform
 	kubectl scale deployment db-deployment --replicas=0 -n farming-platform
+
+# --- AWS / LocalStack Targets ---
+
+aws-init:
+	cd infra/aws && terraform init
+
+aws-apply:
+	cd infra/aws && terraform apply -auto-approve

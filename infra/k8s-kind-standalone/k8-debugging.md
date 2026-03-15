@@ -94,6 +94,9 @@ seedling-api   0/0     0            0           44m
 
 # scale to 0
 kubectl scale deployment postgres-db  --replicas=0 -n farming-platform
+
+#stop your Kind cluster
+kind delete cluster
 ```
 
 

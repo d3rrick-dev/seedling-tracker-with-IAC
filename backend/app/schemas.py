@@ -1,5 +1,7 @@
 from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 from datetime import date
+from typing import Optional
 
 class SeedlingBase(BaseModel):
     crop_type: str
@@ -12,5 +14,12 @@ class SeedlingCreate(SeedlingBase):
 
 class SeedlingOut(SeedlingBase):
     id: int
-    class Config:
-        from_attributes = True
+    image_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class SeedlingSearchOut(SeedlingOut):
+    ready_date: date
+    days_remaining: int
+    status: str
+    model_config = ConfigDict(from_attributes=True)
