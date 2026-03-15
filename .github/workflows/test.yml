@@ -27,14 +27,21 @@ jobs:
           uv python install
           uv sync --all-extras --dev
 
+      - name: Run Migrations
+        env:
+            DATABASE_URL: "sqlite:///./test.db"
+        run: uv run alembic upgrade head
+
       - name: Run Pytest (Unit/Integration)
+        env:
+          DATABASE_URL: "sqlite:///./test.db"
         run: uv run pytest
 
       - name: Run Behave (BDD/Behavioral)
         env:
-          TESTING: "true"
-          DATABASE_URL: "sqlite:///:memory:"
-          AWS_ACCESS_KEY_ID: testing
-          AWS_SECRET_ACCESS_KEY: testing
-          AWS_DEFAULT_REGION: us-east-1
+            TESTING: "true"
+            DATABASE_URL: "sqlite:///./test.db"
+            AWS_ACCESS_KEY_ID: testing
+            AWS_SECRET_ACCESS_KEY: testing
+            AWS_DEFAULT_REGION: us-east-1
         run: uv run behave --format plain --no-capture
