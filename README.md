@@ -196,3 +196,14 @@ If you need to wipe everything and start fresh:
 ```bash
 # Delete the cluster, destroy infra, and wipe local test DB
 kind delete cluster --name seedling-cluster && terraform destroy -auto-approve && rm test.db
+
+
+
+### Future Scaling (AWS Roadmap)
+While the current version uses LocalStack, the architecture is designed to port directly to AWS:
+
+1. **Compute:** Migrate FastAPI from KinD to **AWS ECS Fargate** for serverless container orchestration.
+2. **Storage:** Transition S3 mocks to a production **Amazon S3** bucket with Lifecycle Policies for old media.
+3. **Database:** Move from local PostgreSQL to **Amazon RDS** with Multi-AZ deployment for high availability.
+4. **Security:** Implement **AWS IAM Roles** for service-to-service communication, eliminating the need for local credentials.
+5. **Monitoring:** Integrate **AWS CloudWatch** for centralized logging and performance metrics.
